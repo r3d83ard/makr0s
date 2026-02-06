@@ -1,0 +1,56 @@
+# ---- macOS ----
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+
+# ---- VS Code ----
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.code-workspace
+
+# ---- Kilo / AI tooling (safe ignores) ----
+# (Ignore transient logs/caches if they appear)
+.kilo/
+.kilo-cache/
+*.promptlog
+*.llmcache
+
+# ---- General temp / logs ----
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+~$*
+
+# ---- Archives ----
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# ---- Python (if you ever use scripts/tools) ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+
+# ---- OS / Editor misc ----
+Thumbs.db
+ehthumbs.db
+.idea/
+*.iml
