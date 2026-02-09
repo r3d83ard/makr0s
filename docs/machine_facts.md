@@ -34,6 +34,8 @@ OFFSET -> MACRO shows:
 
 ## 4) Probe/tool setter skip behavior (confirmed)
 - Skip0 PMC address: F0122.0
+- Skip position is read from system variables #5061–#5063 (captured skip point after G31).
+- Captured skip point may differ slightly from the current position display due to servo/processing delay; macros must use #506x values for measurement.
 - Spindle probe and tool setter share this same Skip0 signal.
 - Triggering probe/tool setter during normal G1 motion does NOT interrupt motion.
 - G31 skip moves respond correctly to both probe and tool setter triggers.
