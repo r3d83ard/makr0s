@@ -19,7 +19,8 @@
 - #523  Y_MAX_MM
 - #524  Z_MIN_MM
 - #525  Z_MAX_MM
-- #526  SAFE_Z_MACHINE (store in MACHINE coords; store units as defined by UNITS_MODE or store explicit MM)
+- #526  SAFE_Z_MACHINE_IN (operator-facing; machine-coordinate safe Z in inches; used for G53 retract)
+- #527  SAFE_Z_MACHINE_MM (internal mirror of safe Z in mm; computed as #526 * 25.4)
 
 ### Probing defaults (persistent)
 - #530  PROBE_SEEK_FEED (in current units)
@@ -48,5 +49,10 @@
 - #585  LAST_STATUS (1=OK, negative=error code)
 
 ## Notes
+- SAFE_Z setting policy:
+  - Operators should set safe Z using helper macro **O9803** with input in inches.
+  - O9803 stores `#526 = A` and `#527 = A * 25.4`.
+  - Operators should not edit #527 directly.
 - Skip0 address (PMC): F0122.0 (shared probe + tool setter). Documented in docs/machine_facts.md.
+- Probing hit position capture after G31 uses system variables `#5061–#5063` (see docs/safety.md).
 - Macro B local argument convention: A->#1, B->#2, etc.

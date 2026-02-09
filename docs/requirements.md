@@ -26,6 +26,17 @@ This file defines the build order and acceptance tests. **Code mode should imple
 
 ---
 
+## SAFE_Z policy (DECISION — operators use inches)
+Operators will work in inches. SAFE_Z is stored as:
+- `#526 SAFE_Z_MACHINE_IN` (operator-facing; **inches**; machine coordinate; used for `G53` retract)
+- `#527 SAFE_Z_MACHINE_MM` (internal mirror; **mm**; computed as `#526 * 25.4`)
+
+**Rule:**
+- Motion macros must retract using `G53 G0 Z[#526]`.
+- Operators should set SAFE_Z using **O9803** (inches input). Operators should not edit `#527` directly.
+
+---
+
 ## Persistent variable map (must match `docs/variable_map.md`)
 **Persistence rule:** use `#500–#999` only for persistent storage on this machine.
 
@@ -36,7 +47,8 @@ This file defines the build order and acceptance tests. **Code mode should imple
 - `#511` LAST_ERROR_CODE
 - `#512` LAST_ALARM_CODE
 - `#520–#525` X/Y/Z min/max in mm (envelope)
-- `#526` SAFE_Z_MACHINE (machine coordinate safe Z; do not overwrite once set)
+- `#526` SAFE_Z_MACHINE_IN (machine coordinate safe Z in inches; used for G53 retract)
+- `#527` SAFE_Z_MACHINE_MM (mm mirror; computed as #526 * 25.4)
 - `#530` PROBE_SEEK_FEED
 - `#531` PROBE_RETRACT_FEED
 - `#532` PROBE_MAX_STROKE
@@ -59,13 +71,13 @@ This file defines the build order and acceptance tests. **Code mode should imple
 
 ---
 
-## Phase 1 — Core library utilities (implement O9800 and O9802 first)
+## Phase 1 — Core library utilities (implement O9800 and O9802 first, then O9803)
 **Goal:** define and implement initialization + alarm/retract utilities before any probing motion.
 
 ### 1.1 Documentation tasks (Architect mode)
-1) Update `docs/variable_map.md` (if needed) so O9800/O9802 variable usage is explicit and consistent:
+1) Update `docs/variable_map.md` (if needed) so O9800/O9802/O9803 variable usage is explicit and consistent:
    - LIB_VERSION, UNITS_MODE, VERBOSE
-   - SAFE_Z_MACHINE
+   - SAFE_Z_MACHINE_IN + SAFE_Z_MACHINE_MM mirror
    - Default feeds and stroke caps
    - LAST_* logging rules (especially `#585`)
 2) Create `docs/macros/O9800.md` from `docs/macros/_TEMPLATE.md`:
@@ -75,6 +87,10 @@ This file defines the build order and acceptance tests. **Code mode should imple
 3) Create `docs/macros/O9802.md` from `docs/macros/_TEMPLATE.md`:
    - Purpose, inputs/outputs, required machine state
    - Explicit list of every G/M code O9802 will use
+   - Variable usage map (local/common/persistent)
+4) Create `docs/macros/O9803.md` from `docs/macros/_TEMPLATE.md`:
+   - Purpose, inputs/outputs, required machine state
+   - Explicit list of every G/M code O9803 will use (expected: none)
    - Variable usage map (local/common/persistent)
 
 ### 1.2 O9800 behavior specification (NO MOTION)
@@ -93,13 +109,13 @@ Rules:
   - `#532` probe max stroke default: 0.050 (inch) or 1.27 (mm)
   - `#533` toolsetter max stroke default: 0.200 (inch) or 5.08 (mm)
   - `#534` max retries default: 3
-- **SAFE_Z_MACHINE handling:**
-  - Do NOT overwrite `#526`.
-  - If `#526` is unset (`#0`), do NOT hard-fault in O9800.
-  - Instead set `#585 = -526` and (if verbose) display `#3006` telling operator to set SAFE_Z_MACHINE.
+- **SAFE_Z handling (inches-based):**
+  - Do NOT overwrite `#526` or `#527`.
+  - If `#526` (SAFE_Z_MACHINE_IN) is unset (`#0`), do NOT hard-fault in O9800.
+  - Instead set `#585 = -526` and (if verbose) display `#3006` telling operator to run **O9803** to set SAFE_Z in inches.
 - Status logging:
   - On success: set `#585 = 1`
-  - On non-fatal missing SAFE_Z_MACHINE: `#585 = -526`
+  - On non-fatal missing SAFE_Z: `#585 = -526`
 - Optional message:
   - If `#501 != 0`, may use `#3006` for “init complete” / “SAFE_Z not set” notices.
 
@@ -119,28 +135,54 @@ Rules:
   - `#511 = <internal error code>`
   - `#512 = <alarm code>`
   - `#585 = -<internal error code>` (negative)
-- **Safe retract behavior:**
-  - If `#526 (SAFE_Z_MACHINE) != 0`, retract using machine coordinates:
+- **Safe retract behavior (ONLY macro allowed to retract-then-alarm):**
+  - If `#526 (SAFE_Z_MACHINE_IN) != 0`, retract using machine coordinates:
     - `G53 G0 Z[#526]`
   - If `#526 == 0`, do not move.
-- O9802 must not rely on reading Skip0 state (no PMC-bit reads in Phase 1).
+- O9802 must not rely on reading Skip0 state (no PMC-bit reads).
 - Raise alarm using the repo standard:
   - `#3000 = <alarm code> (clear message with context)`
 - Modal hygiene:
   - Document every modal changed inside O9802 and restore to a safe expected state on exit where appropriate.
+
+### 1.4 O9803 behavior specification (Set SAFE_Z from inches — NO MOTION)
+**File:** `macros/core/O9803.nc`
+
+Purpose:
+- Operator helper to set SAFE_Z in **inches** while also storing an internal **mm mirror** for future metric support.
+
+Inputs:
+- `A` = SAFE_Z_MACHINE_IN (safe Z in **inches**, machine coordinate)
+
+Rules:
+- No axis motion (no G0/G1/G31). No spindle/coolant M-codes.
+- Validate input:
+  - If `A` is missing/zero → alarm via `#3000` with a clear message.
+  - Allow negative values (machine Z can be negative down).
+- Store:
+  - `#526 = A` (SAFE_Z_MACHINE_IN)
+  - `#527 = A * 25.4` (SAFE_Z_MACHINE_MM mirror)
+- Set status/log:
+  - `#585 = 1` (OK)
+- Optional message:
+  - If `#501 != 0`, `#3006 = 1` confirming the stored values.
 
 ### Phase 1 Acceptance tests
 - O9800:
   - Populates defaults in #500–#599 **only when unset**.
   - Performs **no axis motion** and uses **no M-codes**.
   - Leaves existing persistent values unchanged (except `#585` status).
-  - If SAFE_Z_MACHINE unset, does **not** hard-alarm; sets `#585 = -526` and (if verbose) issues a `#3006` reminder.
+  - If SAFE_Z unset (`#526==0`), does **not** hard-alarm; sets `#585 = -526` and (if verbose) issues a `#3006` reminder to run O9803.
 - O9802:
   - Logs `#511/#512/#585` consistently.
-  - If SAFE_Z_MACHINE is set and current Z is below safe, performs `G53 G0 Z[#526]`.
-  - If SAFE_Z_MACHINE is unset, performs no motion.
+  - If SAFE_Z is set (`#526!=0`) and current Z is below safe, performs `G53 G0 Z[#526]`.
+  - If SAFE_Z is unset (`#526==0`), performs no motion.
   - Raises `#3000` with deterministic alarm code/message.
   - Never uses probe-enable M-codes (M111/M112) or attempts PMC-bit reads.
+- O9803:
+  - Stores `#526 = A` (inches) and `#527 = A * 25.4` (mm mirror).
+  - Performs no axis motion and no M-codes.
+  - Alarms with `#3000` if A is missing/zero.
 
 ---
 
@@ -151,6 +193,7 @@ Rules:
 - [ ] Create `docs/macros/O9810.md` from template with:
   - Inputs/outputs, machine state, full G/M code list
   - Explanation that measured position comes from `#5061–#5063`
+  - Explicit SAFE_Z rule: retract uses `G53 G0 Z[#526]`
 
 ### 2.2 O9810 behavior (first primitive)
 **File:** `macros/probe/O9810.nc`
