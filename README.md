@@ -1,4 +1,5 @@
-# makr0s: Fanuc 0i-MF Plus Probing Macro Library (Smart Machine Tool MINI)
+# makr0s
+## Fanuc 0i-MF Plus Probing Macro Library (Smart Machine Tool MINI)
 
 This repo contains a custom Macro B probing library built from scratch for:
 - Machine: Smart Machine Tool MINI
