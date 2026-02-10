@@ -61,12 +61,13 @@ For probing results, macros must use the captured skip-position system variables
 ### 1) Skip must be inactive before probing (precheck)
 - If skip is active before a probing stroke: **stop/alarm** (“skip already active”).
 
-**Implementation note:**
+**Implementation note (Phase 2):**
 - Macro B typically cannot read PMC bit `F0122.0` directly.
-- If a macro-accessible skip-state method is available later, implement this check.
-- If not available, enforce this safety by:
+- **Phase 2 (O9810) does not implement skip precheck** because no macro-accessible skip-state method exists.
+- Enforce safety by:
   - requiring the operator to ensure the probe/toolsetter is not already triggered before running probing cycles, and
   - relying on bounded G31 strokes + deterministic fault handling (below).
+- If a macro-accessible skip-state method is available later, implement this check.
 
 ### 2) Bounded probing stroke (software overtravel cap)
 - Every G31 probing move must have a maximum allowed travel distance (software overtravel).
@@ -80,6 +81,7 @@ After a trigger:
 - Retract immediately to safe Z:
   - `G53 G0 Z[#526]`
 - If SAFE_Z is unset (`#526 == 0`): **hard-fault** (do not attempt motion).
+- **Phase 2 (O9810) does not implement skip-stuck verification**; code `922` is reserved for later when skip state becomes readable.
 - If skip state is readable in macro logic:
   - verify skip returns inactive; if not: **stop/alarm** (“skip stuck”).
 

@@ -189,6 +189,10 @@ Rules:
 ## Phase 2 — Probing primitives (controlled motion)
 **Goal:** implement one safe probing primitive (O9810) using G31 + #506x capture.
 
+**Global constraints (Phase 2):**
+- Any macro that executes `G31` must issue `M19` immediately before the first probing stroke (or immediately before any feed motion section).
+- The per-macro explainer must list `M19` under “G/M code explainer.”
+
 ### 2.1 Documentation tasks
 - [ ] Create `docs/macros/O9810.md` from template with:
   - Inputs/outputs, machine state, full G/M code list
@@ -197,6 +201,12 @@ Rules:
 
 ### 2.2 O9810 behavior (first primitive)
 **File:** `macros/probe/O9810.nc`
+
+Call interface (Macro arguments):
+- `A` = axis (1 = X, 2 = Y, 3 = Z) **required**
+- `B` = stroke distance (**positive**, current units) **required**
+- `C` = mode (1 = probe, 2 = toolsetter) **required**; selects max stroke source
+- `D` = feed (0 = use `#530`, otherwise use `D`)
 
 Minimum features:
 - Pre-positioning policy: caller is responsible for being at a safe start point.
@@ -207,15 +217,27 @@ Minimum features:
 - Retract to safe Z:
   - If `#526 == 0` → call O9802 (alarm: safe Z not set)
   - Else retract with `G53 G0 Z[#526]`
-- Log results into `#580–#584` as appropriate for debugging.
+- Error/alarm codes (via O9802):
+  - SAFE_Z unset: `A=920`, `B=920`, message `SAFE_Z NOT SET`
+  - No trigger within max stroke: `A=921`, `B=921`, message `NO TRIGGER`
+  - Skip stuck (if implemented later): `A=922`, `B=922`, message `SKIP STUCK` (**not used in Phase 2**)
+- Log results into `#580–#584` for commissioning:
+  - `#580` LAST_RUN_ID / counter (increment each call)
+  - `#581` LAST_INPUT_A (axis)
+  - `#582` LAST_INPUT_B (stroke)
+  - `#583` LAST_INPUT_C (mode)
+  - `#584` LAST_RESULT_2 (hit position value from `#5061/#5062/#5063`)
+- Modal state: entry any; exit `G90` and `G94`.
 
 ### Phase 2 Acceptance tests
 - Air test:
-  - No trigger within max stroke → macro faults via O9802 with deterministic alarm code.
+  - No trigger within max stroke → macro faults via O9802 with alarm `A/B=921`.
+- SAFE_Z unset:
+  - If `#526==0`, macro faults via O9802 with alarm `A/B=920`.
 - Trigger test:
   - Manual trigger during G31 stops early, stores `#506x` values, retracts to safe Z, exits cleanly.
 - Modal hygiene:
-  - Macro returns to `G90` on exit if it uses `G91`.
+  - Macro returns to `G90` and `G94` on exit if it uses `G91` or changes feed mode.
 
 ---
 
