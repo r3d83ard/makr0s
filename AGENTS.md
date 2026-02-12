@@ -24,6 +24,26 @@ These rules apply to ALL work in this repo, across Ask / Architect / Code / Debu
 - **Rationale:** EX1058 “AXES FEED START WITHOUT SPINDLE COMMAND” occurs unless `M19` is issued; verified on-machine.
 - **No `IF...THEN` anywhere** (GOTO/label only).
 - **No nested parentheses in comments** (single `(` and `)` only).
+- **No bracketed axis words in any motion block (G0/G1/G31/G53).** Axis words must be plain `X#nn`, `Y#nn`, `Z#nn` or numeric literals. If computation is needed, compute into a temp variable first, then use `X#temp` / `Y#temp` / `Z#temp` (no brackets).
+  - BAD: `G53 G0 Z[#526]`, `G31 X[#100] F#101`
+  - GOOD: `#100 = #526` then `G53 G0 Z#100`; `#101 = #100` then `G31 X#101 F#102`
+
+### Fanuc Macro B argument mapping (G65/G66)
+A->#1
+B->#2
+C->#3
+I->#4
+J->#5
+K->#6
+D->#7
+E->#8
+F->#9
+
+Hard rules:
+- Do not assume alphabetical mapping.
+- Do not use `#1–#9` as scratch variables in any macro that may be called with `G65` (they are reserved for args).
+- Use scratch locals only from `#10–#33`.
+- This control supports locals `#1–#33` only.
 
 ## Workflow expectations
 - Ask mode: research and summarize, then write results into `docs/*.md`.

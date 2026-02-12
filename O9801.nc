@@ -22,17 +22,21 @@ IF[#105 EQ #0] THEN #105 = 0.200
 G90 G17 G40 G49 G80
 
 (Go to safe clearance above reference plane)
-G00 Z[#100 + #105]
+#130 = #100 + #105
+G00 Z#130
 
 (Probe down past plane)
-G31 Z[#100 - #103] F#102
+#131 = #100 - #103
+G31 Z#131 F#102
 
 #110 = #5063   (Z hit position in current work coordinates)
 #111 = [#110 - #100]  (Z error: + means hit ABOVE plane)
 
 (Retract)
-G00 Z[#110 + #104]
-G00 Z[#100 + #105]
+#132 = #110 + #104
+G00 Z#132
+#133 = #100 + #105
+G00 Z#133
 
 (Optionally update tool length geometry offset)
 (Assumes Fanuc allows writing #2000+H and you are using G43 Hnn for the probe)

@@ -102,3 +102,11 @@ Minimum expectations:
 - First run all probing macros in a **safe area in air** during commissioning.
 - Keep feed/rapid overrides conservative until validated.
 - Always verify SAFE_Z is set (via O9803) before running any probing motion macros.
+
+---
+
+## Calibration setup constraints (Phase 3 — O9820)
+- Use **master ring** securely clamped on the table; keep the probe clear of fixtures.
+- Use a **known-length test bar** and a **known Z reference surface** (machine coordinate) for Z calibration.
+- Calibration must use **machine coordinates** only; **do not write or modify WCS** in Phase 3.
+- All probing strokes must be executed via **O9810** (no direct G31 moves in O9820).

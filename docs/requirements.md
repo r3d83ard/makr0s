@@ -8,6 +8,20 @@ This file defines the build order and acceptance tests. **Code mode should imple
 - Canonical machine facts live in `docs/machine_facts.md`. If anything conflicts, update that doc first.
 - **Rename any misspelled `docs/saftey.md` to `docs/safety.md` immediately** and update references.
 
+### Repo acceptance
+- Repo contains no `X[`, `Y[`, `Z[` in any `.nc` file.
+
+---
+
+## Global macro coding constraints (Fanuc syntax)
+- **No bracketed axis words in any motion block (G0/G1/G31/G53).** Use plain `X#nn`, `Y#nn`, `Z#nn` or numeric literals. If computation is needed, store into a temp variable first, then use `X#temp` / `Y#temp` / `Z#temp`.
+- **No `IF...THEN`** (use `IF...GOTO`).
+- **No nested parentheses in comments** (single `(` and `)` only).
+- **M19 before any G31** (or before any feed move section that includes G31).
+- **G65 argument mapping must follow the table in `AGENTS.md`; D is `#7`, not `#4`.**
+- **Reserve `#1–#9` for args; scratch locals must be `#10–#33` only.**
+- **No locals above `#33`.**
+
 ---
 
 ## Alarm + messaging standard (DECISION — lock this in)
@@ -32,7 +46,7 @@ Operators will work in inches. SAFE_Z is stored as:
 - `#527 SAFE_Z_MACHINE_MM` (internal mirror; **mm**; computed as `#526 * 25.4`)
 
 **Rule:**
-- Motion macros must retract using `G53 G0 Z[#526]`.
+- Motion macros must retract using `G53 G0 Z#526`.
 - Operators should set SAFE_Z using **O9803** (inches input). Operators should not edit `#527` directly.
 
 ---
@@ -137,7 +151,7 @@ Rules:
   - `#585 = -<internal error code>` (negative)
 - **Safe retract behavior (ONLY macro allowed to retract-then-alarm):**
   - If `#526 (SAFE_Z_MACHINE_IN) != 0`, retract using machine coordinates:
-    - `G53 G0 Z[#526]`
+    - `G53 G0 Z#526`
   - If `#526 == 0`, do not move.
 - O9802 must not rely on reading Skip0 state (no PMC-bit reads).
 - Raise alarm using the repo standard:
@@ -216,7 +230,7 @@ Minimum features:
   - X hit = `#5061`, Y hit = `#5062`, Z hit = `#5063`
 - Retract to safe Z:
   - If `#526 == 0` → call O9802 (alarm: safe Z not set)
-  - Else retract with `G53 G0 Z[#526]`
+  - Else retract with `G53 G0 Z#526`
 - Error/alarm codes (via O9802):
   - SAFE_Z unset: `A=920`, `B=920`, message `SAFE_Z NOT SET`
   - No trigger within max stroke: `A=921`, `B=921`, message `NO TRIGGER`
@@ -241,13 +255,71 @@ Minimum features:
 
 ---
 
-## Phase 3 — Calibration
-- O9820: probe calibration using master ring + test bar (derive effective radius/center/length; store #540+)
-- O9830: tool setter position calibration (store #550+)
+## Phase 2.5 — Signed-direction probing primitive (O9812)
+**Goal:** add a signed-direction probing primitive to support negative strokes and center-finding without modifying O9810.
 
-Acceptance:
-- Outputs stored in #540+ (probe) and #550+ (tool setter).
-- Operator docs for calibration are complete and repeatable.
+### 2.5.1 O9812 scope + constraints
+- **Interface:**
+  - `A` = axis (1=X, 2=Y, 3=Z)
+  - `B` = stroke distance (**signed**; + for +X/+Y/+Z, - for -X/-Y/-Z)
+  - `C` = mode (1 = probe uses `#532`, 2 = toolsetter uses `#533`)
+  - `D` = feed override (0 uses `#530`)
+- **Error codes (via O9802):**
+  - SAFE_Z unset: `920`
+  - AXIS invalid: `923`
+  - MODE invalid: `924`
+  - STROKE zero: `925`
+  - NO TRIGGER: `921`
+  - SKIP ACTIVE AT START / IMMEDIATE HIT: `926`
+  - SKIP STUCK AFTER RETRACT: `927`
+- **Probing primitive:** O9812 executes its own bounded G31 stroke with **signed** direction.
+- **Safety + compatibility:**
+  - `M19` immediately before first G31 in O9812 (or in a called macro; document which).
+  - **No `IF...THEN`** (GOTO/label only), **no nested parentheses** in comments.
+  - No bracketed axis-word expressions.
+
+### Phase 2.5 Acceptance tests
+- Positive and negative strokes complete with correct sign and bounded travel.
+- NO TRIGGER raises O9802 `A/B=921`.
+- SKIP active at start or immediate hit raises O9802 `A/B=926`.
+- SKIP stuck after retract raises O9802 `A/B=927`.
+- Modal hygiene: exits `G90` and `G94` (and cancels any temporary modals used).
+
+---
+
+## Phase 3 — Calibration (probe only)
+**Goal:** implement probe calibration macro **O9820** only. Tool setter calibration (O9830) is **deferred**.
+
+### 3.1 O9820 scope + constraints
+- **Outputs stored:**
+  - `#540` stylus radius (effective; units per `#510`)
+  - `#541` stylus length / Z trigger offset (effective; units per `#510`)
+- **Calibration artifacts:** master ring + test bar (both available).
+- **Probing primitive:** **O9810 only** (no direct `G31` motion in O9820).
+- **Safety + compatibility:**
+  - `M19` immediately before each probing sequence (O9810 handles M19 before each G31).
+  - Bounded strokes, safe retracts, and O9802 alarms on failure.
+  - **No `IF...THEN`** (GOTO/label only), **no nested parentheses** in comments.
+- **Coordinates:** use machine coordinates for all calibration math; **do not write WCS** in Phase 3.
+
+### 3.2 Calibration method (summary)
+- **Ring calibration (XY, stylus radius):**
+  - If `C/D` provided, treat them as ring center X/Y **machine coordinates**.
+  - If `C/D` are zero, find ring center by probing **X- / X+ / Y- / Y+** with **O9812** and averaging hit positions (`#5061/#5062`).
+  - Compute measured diameters:
+    - `Dx = Xplus - Xminus`, `Dy = Yplus - Yminus` (from `#5061/#5062` hits).
+  - Effective stylus radius:
+    - `Rx = (B - Dx) / 2`, `Ry = (B - Dy) / 2`, then `#540 = (Rx + Ry) / 2`.
+- **Z calibration (stylus length / trigger offset):**
+  - Use test bar length **L** and reference surface machine Z **Zref**.
+  - Probe Z to the reference surface with O9810 to get `Zhit` (`#5063`).
+  - Effective stylus length / trigger offset: `#541 = (Zref + L) - Zhit`.
+- **Units:** operator inputs in inches; O9820 converts to current units when `#510 = 2`.
+
+### Phase 3 Acceptance tests
+- Ring: three repeated X+/X-/Y+/- cycles yield `#540` repeatability within **±0.0002 in** (±0.005 mm).
+- Z: three repeated Z touches yield `#541` repeatability within **±0.0002 in** (±0.005 mm).
+- Safety: all probing uses O9810, M19 precedes each G31, bounded strokes enforced, safe retracts occur.
 
 ---
 

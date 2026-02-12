@@ -14,6 +14,8 @@ List each argument (A/B/C/…):
 - A = ...
 - B = ...
 Include defaults, valid ranges, and units.
+ - Argument locals used match Fanuc G65 mapping (A=#1, B=#2, C=#3, I=#4, J=#5, K=#6, D=#7, E=#8, F=#9).
+ - Scratch locals use #10–#33 only.
 
 ## Outputs
 - Variables written (local/common/persistent)
@@ -25,6 +27,12 @@ Include defaults, valid ranges, and units.
 - Bounded stroke behavior:
 - Retract behavior:
 - Alarm codes/messages:
+
+## Fanuc syntax constraints
+- All axis addresses use X# / Y# / Z# without brackets. Computations must be done on separate lines.
+
+## Motion blocks
+- All axis addresses use X# / Y# / Z# without brackets. Computations must be done on separate lines.
 
 ## Step-by-step flow (operator/comprehension view)
 1) ...
