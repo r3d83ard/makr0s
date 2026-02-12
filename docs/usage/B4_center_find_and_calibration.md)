@@ -1,9 +1,9 @@
-# O9820 B4 Test Procedure (Ring Center-Find + Calibration)
+#O9820 B4 Test Procedure (Ring Center-Find + Calibration)
 
-## Purpose
+##Purpose
 
 This procedure validates that the probe calibration macro O9820 can:
-	1.	Find the ring center automatically using X−, X+, Y−, Y+ wall touches.
+1. Find the ring center automatically using X−, X+, Y−, Y+ wall touches.
 	2.	Compute and store:
 	•	#540 = stylus effective radius
 	•	#541 = stylus effective length constant (Z reference)
