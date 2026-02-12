@@ -1,57 +1,62 @@
-#O9820 B4 Test Procedure (Ring Center-Find + Calibration)
+# O9820 Calibration + Find Ring Center
 
-##Purpose
+## Purpose
 
-This procedure validates that the probe calibration macro O9820 can:
-1. Find the ring center automatically using X−, X+, Y−, Y+ wall touches.
-	2.	Compute and store:
-	•	#540 = stylus effective radius
-	•	#541 = stylus effective length constant (Z reference)
-	3.	Complete successfully with:
-	•	#585 = 1
-	•	#583/#584 logging the final calibration values
+This procedure validates that the probe calibration macro **O9820** can:
 
-This is the full “real” configuration test (B4) after the safety and syntax tests have already passed.
+1. Find the ring center automatically using X−, X+, Y−, Y+ wall touches
+2. Compute and store:
+	- #540 = stylus effective radius
+	- #541 = stylus effective length constant (Z reference)
+3. Complete successfully with:
+	- #585 = 1
+	- #583/#584 logging the final calibration values
 
-⸻
+This is the **full “real” configuration test** after the safety and syntax tests have already passed.
 
-Why we do these steps
+---
 
-Why the ring is needed
+### Why we do these steps
 
-The ring provides known geometry (a stable inside diameter). Touching opposite walls lets the macro compute:
-	•	The true center (average of opposite hit positions)
-	•	The effective probe radius by comparing measured vs nominal diameter
+#### Why the ring is needed
 
-Why we must start near the center
+The ring provides **known geometry** (a stable inside diameter). Touching opposite walls lets the macro compute:
 
-Center-find uses short, bounded strokes (software “overtravel”). If we start too far from the ring wall or too far outside the ring, the stroke may not reach the surface and the macro will alarm 921 (NO TRIGGER).
+- The **true center** (average of opposite hit positions)
+- The **effective probe radius** by comparing measured vs nominal diameter
 
-Why we use Safe Z and Z limits
+#### Why we must start near the center
+
+Center-find uses **short, bounded strokes** (software “overtravel”). If we start too far from the ring wall or too far outside the ring, the stroke may not reach the surface and the macro will alarm **921 (NO TRIGGER)**.
+
+#### Why we use Safe Z and Z limits
 
 The macros use SAFE_Z_MACHINE (#526) and Z travel limits (#524/#525) to prevent dangerous motion:
-	•	Moves to SAFE_Z_MACHINE before XY repositioning.
-	•	Clamps any computed Z approach plane to the configured Z limits.
+
+- Moves to SAFE_Z_MACHINE before XY repositioning.
+- Clamps any computed Z approach plane to the configured Z limits.
 This prevents commanding Z to an unsafe value.
 
-Why we need the test bar (or a real Z stack) for the Z reference portion
+#### Why we need the test bar (or a real Z stack) for the Z reference portion
 
-The Z-reference part of O9820 assumes there is a real physical stack height to touch:
-	•	E = Z reference plane (machine coordinate)
-	•	F = test bar length
+The Z-reference part of O9820 assumes there is a **real physical stack height** to touch:
+
+- E = Z reference plane (machine coordinate)
+- F = test bar length
+
 The macro approaches Z_start ≈ E + F + margin and probes down to touch.
 If there is no real contact surface at the expected height, the Z probing will alarm 921 or produce meaningless values.
 
-Why M19 is required before G31
+#### Why M19 is required before G31
 
 This machine requires spindle orientation (M19) before skip-probing moves (G31). Without it, you may see feed/spindle state errors or probing may not execute correctly.
 
-⸻
+---
 
-Safety prerequisites (must be true before running)
-	1.	Machine is in a safe state
-	•	No active tool in cut
-	•	No coolant blasting the probe (unless your process requires it)
+### Safety prerequisites (must be true before running)
+1. **Machine is in a safe state**
+- No active tool in cut
+No coolant blasting the probe (unless your process requires it)
 	•	Door closed / interlocks satisfied
 	•	Feed override conservative (start at 25–50% for first validation)
 	2.	Macros initialized
