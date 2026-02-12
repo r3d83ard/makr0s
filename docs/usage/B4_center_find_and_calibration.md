@@ -162,7 +162,7 @@ This makes:
 2. Start from a safe position above the ring.
 3. Run:
 
-```
+```json
 G65 P9820 A1 B<ring_ID> C0 D0 E<Z_ref> F<testbar_len>
 ```
 
@@ -239,7 +239,11 @@ Meaning: #526 = 0
 
 Actions:
 
-1. Run: G65 P9803 A<safe_z_machine_in> to set safe Z.
+1. Run the following command to set safe Z.
+
+```json
+G65 P9803 A<safe_z_machine_in>
+```
 
 --- 
 
