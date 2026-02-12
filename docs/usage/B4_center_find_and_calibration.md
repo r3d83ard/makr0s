@@ -57,12 +57,13 @@ This machine requires spindle orientation (M19) before skip-probing moves (G31).
 1. **Machine is in a safe state**
 - No active tool in cut
 - No coolant blasting the probe (unless your process requires it)
-	- Door closed / interlocks satisfied
-	•	Feed override conservative (start at 25–50% for first validation)
+- Door closed / interlocks satisfied
+- Feed override conservative (start at 25–50% for first validation)
 
 2. **Macros initialized**
-	- Run O9800 once after power-up to initialize defaults.
-	- Run O9803 once to set SAFE_Z_MACHINE.
+
+- Run O9800 once after power-up to initialize defaults.
+- Run O9803 once to set SAFE_Z_MACHINE.
 
 3. **Persistent variables must be set correctly**
 
