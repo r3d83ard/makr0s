@@ -88,7 +88,6 @@ If #524/#525 are 0 or inverted, O9820 will fault 946 (Z LIMITS INVALID).
 - Master ring (known inside diameter)
 - Probe in a toolholder (spindle probe)
 - Test bar tool (known length)
-- If test bar length is not known, you can still run B4 to validate center-finding and general flow, but #541 may not be meaningful.
 
 ---
 
@@ -97,7 +96,7 @@ If #524/#525 are 0 or inverted, O9820 will fault 946 (Z LIMITS INVALID).
 #### A. Mount the ring safely
 
 1.	Clean the table / fixture.
-2.	Place ring securely and clamp so it cannot move.
+2.	Place ring on vice 
 3.	Confirm ring is square and stable (no rocking).
 
 #### B. Load the probe
@@ -142,7 +141,7 @@ G65 P9820 A1 B<ring_ID> C0 D0 E<Z_ref> F<testbar_len>
 2. Decide what your Z reference plane E represents.
 	- Best: E + F corresponds to a real plane the probe can touch (table surface, fixture top, or a known calibration surface).
 
-#### Practical way to set E
+#### Practical way to set E:
 
 If you can measure a plane with the test bar and record machine Z at contact:
 
@@ -246,13 +245,14 @@ Actions:
 
 ### Post-run documentation (operator notes)
 
-Record for each successful calibration run:
-	•	Date/time
-	•	Ring ID B used
-	•	E and F used
-	•	Result values:
-	•	#540
-	•	#541
-	•	Any issues (alarms, repositioning required)
+#### Record for each successful calibration run:
+
+- Date/time
+- Ring ID B used
+- E and F used
+- Result values:
+- #540
+- #541
+- Any issues (alarms, repositioning required)
 
 ---
