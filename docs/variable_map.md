@@ -21,12 +21,14 @@
 - #525  Z_MAX_MM
 - #526  SAFE_Z_MACHINE_IN (operator-facing; machine-coordinate safe Z in inches; used for G53 retract)
 - #527  SAFE_Z_MACHINE_MM (internal mirror of safe Z in mm; computed as #526 * 25.4)
+- #528  PROBE_Z_PLANE_IN (operator-facing; machine-coordinate Z plane in inches for ring wall probing drops)
+- #529  RING_APPROACH_CLEARANCE (operator-facing; clearance from ring ID wall used in O9820; units per UNITS_MODE)
 
 ### Probing defaults (persistent)
-- #530  PROBE_SEEK_FEED (in current units)
-- #531  PROBE_RETRACT_FEED (in current units)
-- #532  PROBE_MAX_STROKE (in current units)
-- #533  TS_MAX_STROKE (in current units)
+- #530  PROBE_SEEK_FEED (units per UNITS_MODE)
+- #531  PROBE_RETRACT_FEED (units per UNITS_MODE)
+- #532  PROBE_MAX_STROKE (max allowed probe stroke; units per UNITS_MODE)
+- #533  TS_MAX_STROKE (max allowed toolsetter stroke; units per UNITS_MODE)
 - #534  MAX_RETRIES
 
 ### Probe calibration outputs (persistent)
@@ -53,6 +55,9 @@
   - Operators should set safe Z using helper macro **O9803** with input in inches.
   - O9803 stores `#526 = A` and `#527 = A * 25.4`.
   - Operators should not edit #527 directly.
+- Probe Z + ring clearance policy:
+  - Operators should set ring wall probing height in `#528` (inches, machine coordinate) before running O9820 ring calibration.
+  - Operators may set `#529` to increase ring approach clearance for safety; if unset, O9820 uses an internal conservative default.
 - Skip0 address (PMC): F0122.0 (shared probe + tool setter). Documented in docs/machine_facts.md.
 - Probing hit position capture after G31 uses system variables `#5061–#5063` (see docs/safety.md).
 - Macro B local argument convention: A->#1, B->#2, etc.

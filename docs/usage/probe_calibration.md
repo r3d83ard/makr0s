@@ -1,10 +1,15 @@
+---
+header-includes:
+  - \usepackage{newunicodechar}
+  - \newunicodechar{≈}{\approx}
+---
 # O9820 Calibration + Find Ring Center
 
 ## Purpose
 
 This procedure validates that the probe calibration macro **O9820** can:
 
-1. Find the ring center automatically using X−, X+, Y−, Y+ wall touches
+1. Find the ring center automatically using X-, X+, Y-, Y+ wall touches
 2. Compute and store:
 	- #540 = stylus effective radius
 	- #541 = stylus effective length constant (Z reference)
@@ -36,6 +41,14 @@ The macros use SAFE_Z_MACHINE (#526) and Z travel limits (#524/#525) to prevent 
 - Moves to SAFE_Z_MACHINE before XY repositioning.
 - Clamps any computed Z approach plane to the configured Z limits.
 This prevents commanding Z to an unsafe value.
+
+#### Why #528 exists
+
+SAFE_Z #526 is for travel only. The macro drops to #528 at the wall approach point so the ruby is at ring height for each G31 wall touch.
+
+#### Why #529 exists
+
+The clearance value keeps the approach point safely inside the ring before dropping to #528. This prevents pre-trigger or crash. Start conservative at 0.050 in and adjust smaller only after a safe dry run.
 
 #### Why we need the test bar (or a real Z stack) for the Z reference portion
 
@@ -70,17 +83,21 @@ This machine requires spindle orientation (M19) before skip-probing moves (G31).
 
 Confirm these on OFFSET → MACRO:
 
-- #526 = SAFE_Z_MACHINE (inches, machine coordinate)
+- #526 = SAFE_Z_MACHINE_IN (inches, machine coordinate) used for all XY rapids
+- #528 = PROBE_Z_PLANE_IN (inches, machine coordinate) used before each ring wall touch
+- #529 = RING_APPROACH_CLEARANCE (inches) safety clearance inside the ring wall
+- #532 = PROBE_MAX_STROKE (inches) wall touches use 3x #529 but never exceed #532
 - #524 = Z_MIN limit (mm)
 - #525 = Z_MAX limit (mm)
 - #530 = probe seek feed (inch/min)
-- #532 = probe max stroke (inch)
 - #585 last status (used for pass/fail)
 - (Optional logs) #580–#584
 
 If #526 is 0, probing macros will fault (SAFE Z not set).
 
 If #524/#525 are 0 or inverted, O9820 will fault 946 (Z LIMITS INVALID).
+
+Note: Operators work in inches, and the library supports mm via UNITS_MODE #510.
 
 ---
 
@@ -108,6 +125,8 @@ If #524/#525 are 0 or inverted, O9820 will fault 946 (Z LIMITS INVALID).
 
 1.	Jog above the ring ID, roughly centered.
 2.	Set Z to a safe height above ring (below SAFE_Z_MACHINE is OK; you should still have clearance).
+3.	Set #528 by jogging to the ring wall probing height and recording machine Z.
+4.	Set #529 to a conservative value such as 0.050 in during commissioning.
 
 Start as close to center as possible to reduce the chance of “NO TRIGGER” alarms during wall touches.
 
@@ -117,9 +136,11 @@ Start as close to center as possible to reduce the chance of “NO TRIGGER” al
 
 You will run:
 
-```json
+```gcode
 G65 P9820 A1 B<ring_ID> C0 D0 E<Z_ref> F<testbar_len>
 ```
+
+Note: #528 and #529 must be set prior to running.
 
 - A1 = inch mode
 - B = ring inside diameter (inches)
@@ -156,22 +177,30 @@ This makes:
 
 ### Run Procedure (step-by-step)
 
+### Pre-run checklist (quick)
+
+- Verify #526, #528, #529, #532, #524, #525 are set in OFFSET → MACRO.
+- Run O9800 after power-up.
+- Run O9803 to set #526 if needed.
+
+---
+
 #### Step 1 — First run in SINGLE BLOCK (recommended)
 
 1. Turn on Single Block.
 2. Start from a safe position above the ring.
 3. Run:
 
-```json
+```gcode
 G65 P9820 A1 B<ring_ID> C0 D0 E<Z_ref> F<testbar_len>
 ```
 
 4. Watch each stage:
 
 - Goes to G53 G0 Z#526 (safe Z)
-- Approaches X−, probes X−
+- Approaches X-, probes X-
 - Approaches X+, probes X+
-- Approaches Y−, probes Y−
+- Approaches Y-, probes Y-
 - Approaches Y+, probes Y+
 - Returns to center
 - Moves to Z start (clamped)
@@ -241,7 +270,7 @@ Actions:
 
 1. Run the following command to set safe Z.
 
-```json
+```gcode
 G65 P9803 A<safe_z_machine_in>
 ```
 
