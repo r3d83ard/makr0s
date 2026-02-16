@@ -1,0 +1,10 @@
+%
+O8004(cosmos*CTS*END)
+(SMART MACHINE TOOL MINI / FANUC 0I-MF)
+(PURPOSE: COSMOS CTS END)
+(DETAILS: walkthroughs/machine-interface/O8004.md)
+M116(OTS off M code) 
+G4X0.1 
+(RETURN TO CALLER)
+M99
+%

@@ -1,0 +1,10 @@
+%
+O8001(cosmos*probe*ST) 
+(SMART MACHINE TOOL MINI / FANUC 0I-MF)
+(PURPOSE: COSMOS PROBE ST)
+(DETAILS: walkthroughs/machine-interface/O8001.md)
+M113 
+G4X1.5 
+(RETURN TO CALLER)
+M99
+%

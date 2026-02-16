@@ -1,0 +1,9 @@
+%
+O8006(cosmos*NCTS*END) 
+(SMART MACHINE TOOL MINI / FANUC 0I-MF)
+(PURPOSE: COSMOS NCTS END)
+(DETAILS: walkthroughs/machine-interface/O8006.md)
+ 
+(RETURN TO CALLER)
+M99
+%

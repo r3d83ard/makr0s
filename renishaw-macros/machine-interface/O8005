@@ -1,0 +1,9 @@
+%
+O8005(cosmos*NCTS*ST)
+(SMART MACHINE TOOL MINI / FANUC 0I-MF)
+(PURPOSE: COSMOS NCTS ST)
+(DETAILS: walkthroughs/machine-interface/O8005.md)
+ 
+(RETURN TO CALLER)
+M99
+%

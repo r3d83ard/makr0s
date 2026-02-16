@@ -1,6 +1,0 @@
-%
-O8003(cosmos*probe*END)
-M114(Probe off M code) 
-G4X0.5 
-M99
-%

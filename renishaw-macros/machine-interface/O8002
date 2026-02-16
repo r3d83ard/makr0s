@@ -1,0 +1,10 @@
+%
+O8002(cosmos*CTS*ST) 
+(SMART MACHINE TOOL MINI / FANUC 0I-MF)
+(PURPOSE: COSMOS CTS ST)
+(DETAILS: walkthroughs/machine-interface/O8002.md)
+M115(OTS on M Code)
+G4X1.
+(RETURN TO CALLER)
+M99
+%

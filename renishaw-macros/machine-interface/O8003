@@ -1,0 +1,10 @@
+%
+O8003(cosmos*probe*END)
+(SMART MACHINE TOOL MINI / FANUC 0I-MF)
+(PURPOSE: COSMOS PROBE END)
+(DETAILS: walkthroughs/machine-interface/O8003.md)
+M114(Probe off M code) 
+G4X0.5 
+(RETURN TO CALLER)
+M99
+%
