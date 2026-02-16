@@ -1,0 +1,6 @@
+%
+O8002(cosmos*CTS*ST) 
+M115(OTS on M Code)
+G4X1.
+M99
+%

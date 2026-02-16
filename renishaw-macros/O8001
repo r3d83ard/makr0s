@@ -1,0 +1,6 @@
+%
+O8001(cosmos*probe*ST) 
+M113 
+G4X1.5 
+M99
+%
